@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Votaciones - Colegio</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="google-sheets-config.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Página Principal -->
+        <div id="home-page" class="page active">
+            <div class="container">
+                <div class="card">
+                    <div class="voting-header">
+                        <h1>Sistema de Votaciones</h1>
+                        <h2>Colegio</h2>
+                        <p>Selecciona tu tipo de acceso</p>
+                    </div>
+
+                    <div class="admin-grid">
+                        <div class="card">
+                            <h3>Panel de Administración</h3>
+                            <p>Acceso para administradores del sistema de votaciones</p>
+                            <button class="btn" onclick="showAdminLogin()">
+                                Acceso Administrador
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <h3>Votación</h3>
+                            <p>Acceso para estudiantes habilitados para votar</p>
+                            <button class="btn btn-success" onclick="showVotingPanel()">
+                                Ir a Votar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="voting-header" style="margin-top: 40px;">
+                        <p style="font-size: 14px; color: #666;">
+                            Sistema desarrollado para elecciones estudiantiles
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Votación -->
+        <div id="voting-page" class="page">
+            <div class="container">
+                <div class="card">
+                    <!-- Login de Estudiante -->
+                    <div id="student-login" class="voting-step active">
+                        <div class="voting-header">
+                            <h1>Votación Estudiantil</h1>
+                            <p>Ingresa tu carnet para votar</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Número de Carnet:</label>
+                            <input type="text" id="carnet-input" placeholder="Ej: 2023001" style="font-size: 18px; text-align: center;">
+                        </div>
+
+                        <div id="login-error" class="error-message" style="display: none;"></div>
+
+                        <div style="text-align: center;">
+                            <button class="btn btn-success" onclick="loginStudent()" style="font-size: 18px; padding: 15px 30px;">
+                                Ingresar a Votar
+                            </button>
+                            <button class="btn" onclick="showHomePage()">
+                                Volver
+                            </button>
+                        </div>
+
+                        <div style="margin-top: 40px; text-align: center; color: #666;">
+                            <p><strong>Instrucciones:</strong></p>
+                            <p>1. Ingresa tu número de carnet</p>
+                            <p>2. Selecciona tu candidato preferido</p>
+                            <p>3. Confirma tu voto</p>
+                            <p style="font-size: 14px; margin-top: 20px;">
+                                Solo puedes votar una vez. Asegúrate de tu elección antes de confirmar.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Candidato -->
+                    <div id="candidate-selection" class="voting-step">
+                        <div class="voting-header">
+                            <h1>Votación Estudiantil</h1>
+                            <p>Bienvenido/a, <strong id="student-name"></strong></p>
+                            <p>Curso: <span id="student-course"></span></p>
+                        </div>
+
+                        <h2 style="text-align: center; margin-bottom: 30px;">
+                            Selecciona tu candidato preferido:
+                        </h2>
+
+                        <div id="voting-error" class="error-message" style="display: none;"></div>
+
+                        <div id="candidates-list"></div>
+
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn btn-success" onclick="confirmVote()" id="confirm-vote-btn" disabled 
+                                    style="font-size: 18px; padding: 15px 30px; opacity: 0.5;">
+                                Confirmar Voto
+                            </button>
+                            <button class="btn" onclick="resetVoting()">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirmación de Voto -->
+                    <div id="vote-confirmation" class="voting-step">
+                        <div class="voting-header">
+                            <h1>¡Voto Registrado!</h1>
+                        </div>
+
+                        <div id="success-message" class="success-message"></div>
+
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn" onclick="showHomePage()">
+                                Volver al Inicio
+                            </button>
+                            <button class="btn" onclick="resetVoting()">
+                                Nuevo Votante
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Administración -->
+        <div id="admin-page" class="page">
+            <div class="container">
+                <!-- Login de Admin -->
+                <div id="admin-login" class="admin-step active">
+                    <div class="card">
+                        <div class="voting-header">
+                            <h1>Panel de Administración</h1>
+                            <p>Ingresa la contraseña para acceder</p>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Contraseña:</label>
+                            <input type="password" id="admin-password" placeholder="Ingresa la contraseña">
+                        </div>
+
+                        <div id="admin-error" class="error-message" style="display: none;"></div>
+
+                        <div style="text-align: center;">
+                            <button class="btn" onclick="loginAdmin()">
+                                Ingresar
+                            </button>
+                            <button class="btn" onclick="showHomePage()">
+                                Volver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard de Admin -->
+                <div id="admin-dashboard" class="admin-step">
+                    <div class="card">
+                        <div class="voting-header">
+                            <h1>Panel de Administración</h1>
+                            <button class="btn" onclick="showHomePage()" style="position: absolute; top: 20px; right: 20px;">
+                                Volver al Inicio
+                            </button>
+                        </div>
+
+                        <!-- Estadísticas -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3 id="total-votes">0</h3>
+                                <p>Votos Totales</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3 id="remaining-voters">5</h3>
+                                <p>Faltan por Votar</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3 id="voting-status">INACTIVA</h3>
+                                <p>Estado Votación</p>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Resultados -->
+                        <div class="card">
+                            <h2>Resultados en Tiempo Real</h2>
+                            <div class="admin-grid">
+                                <div class="chart-container">
+                                    <canvas id="barChart"></canvas>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="pieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de Google Sheets -->
+                        <div class="config-panel" id="config-panel">
+                            <h3>📊 Configuración de Google Sheets</h3>
+                            <div id="config-status"></div>
+                            <button class="btn" onclick="showConfigInstructions()">
+                                Ver Instrucciones de Configuración
+                            </button>
+                            <button class="btn" onclick="testConnection()">
+                                Probar Conexión
+                            </button>
+                            <button class="btn btn-success" onclick="syncDataManually()">
+                                Sincronizar Datos
+                            </button>
+                        </div>
+
+                        <!-- Controles -->
+                        <div class="admin-grid">
+                            <div class="card">
+                                <h3>Control de Votación</h3>
+                                
+                                <div class="input-group">
+                                    <label>Hora de Inicio:</label>
+                                    <input type="datetime-local" id="start-time">
+                                </div>
+
+                                <div class="input-group">
+                                    <label>Hora de Fin:</label>
+                                    <input type="datetime-local" id="end-time">
+                                </div>
+
+                                <button class="btn btn-success" onclick="startVoting()">
+                                    Iniciar Votación
+                                </button>
+
+                                <button class="btn btn-danger" onclick="endVoting()">
+                                    Terminar Votación
+                                </button>
+                            </div>
+
+                            <div class="card">
+                                <h3>Acciones</h3>
+                                
+                                <button class="btn btn-danger" onclick="clearAllVotes()">
+                                    Borrar Todos los Votos
+                                </button>
+
+                                <button class="btn" onclick="exportPDF()">
+                                    Exportar Reporte PDF
+                                </button>
+
+                                <button class="btn" onclick="exportChartPDF()">
+                                    Exportar Gráfico PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Resultados -->
+                        <div class="card">
+                            <h3>Resultados Detallados</h3>
+                            <table id="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Candidato</th>
+                                        <th>Sigla</th>
+                                        <th>Votos</th>
+                                        <th>Porcentaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
